@@ -4,24 +4,13 @@
             [secretary.core :as secretary :include-macros true]
             [goog.events :as events]
             [goog.history.EventType :as EventType]
-            [cljsjs.react :as react])
+            [cljsjs.react :as react]
+            [uix.lorem :as l])
   (:import goog.History))
 
 ;; -------------------------
 ;; Views
 
-
-#_(def ui-state
-    (atom
-     {:current 0
-      :views {[:editors 0 0] {:formalism :event-b :file "m1"}
-              [:editors 0 1] {:formalism :event-b :file "m0"}
-              [:editors 1 0] {:formalism :event-b :file "m2"} ;; **
-              [:editors 1 1] {:formalism :event-b :file "m0"}
-              [:editors 1 2] {:formalism :event-b :file "ctx0"}
-              [:animations 0 0] {:editor [1 0] :model "animator0" :trace "212" :type :state-view}
-              [:animations 0 1] {:editor [1 0] :model "animator0" :trace "212" :type :events-view}
-              }}))
 
 (def ui-state
   (atom
@@ -86,22 +75,30 @@
 (defmethod render-view :editor [{:keys [formalism file row column]}]
   [:div.editor (merge  {:key (str "ed" row column)}
                        (show :editors row column))
-   (str "Editor: " file "@"row ","column)])
+   [:h1 (str "Editor: " file "@"row ","column)]
+   [:b (l/gen-lorem)]
+   [:div (l/gen-lorem)]])
 
 (defmethod render-view :state-view [{:keys [model trace row column]}]
   [:div.state-view (merge {:key (str "ani" row column)}
                           (show :animators row column))
-   (str "State: " model "/" trace "@"row ","column)])
+   [:h1 (str "State: " model "/" trace "@"row ","column)]
+   [:p (l/gen-lorem)]
+   [:div (l/gen-lorem)]])
 
 (defmethod render-view :events-view [{:keys [model trace row column]}]
   [:div.events-view (merge {:key (str "ani" row column)}
                            (show :animators row column))
-   (str "Events: " model "/" trace "@"row ","column)])
+   [:h1 (str "Events: " model "/" trace "@"row ","column)]
+   [:i (l/gen-lorem)]
+   [:div (l/gen-lorem)]])
 
 (defmethod render-view :history-view [{:keys [model trace row column]}]
   [:div.history-view (merge {:key (str "ani" row column)}
                             (show :animators row column))
-   (str "History: " model "/" trace "@"row ","column)])
+   [:h1 (str "History: " model "/" trace "@"row ","column)]
+   [:b (l/gen-lorem)]
+   [:p (l/gen-lorem)]])
 
 
 (defn render-row [y columns]
@@ -127,4 +124,13 @@
   (reagent/render [home-page] (.getElementById js/document "app")))
 
 (defn init! []
+  (.add js/shortcut "Alt+Left" #(left))
+  (.add js/shortcut "Alt+Right" #(right))
+  (.add js/shortcut "Alt+Up" #(up))
+  (.add js/shortcut "Alt+Down" #(down))
+  (.add js/shortcut "Escape" #(esc))
+  (.add js/shortcut "Meta+Left" #(desktop))
+  (.add js/shortcut "Meta+Right" #(desktop))
   (mount-root))
+
+
