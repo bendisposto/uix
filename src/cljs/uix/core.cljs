@@ -11,65 +11,77 @@
 ;; Views
 
 
+#_(def ui-state
+    (atom
+     {:current 0
+      :views {[:editors 0 0] {:formalism :event-b :file "m1"}
+              [:editors 0 1] {:formalism :event-b :file "m0"}
+              [:editors 1 0] {:formalism :event-b :file "m2"} ;; **
+              [:editors 1 1] {:formalism :event-b :file "m0"}
+              [:editors 1 2] {:formalism :event-b :file "ctx0"}
+              [:animations 0 0] {:editor [1 0] :model "animator0" :trace "212" :type :state-view}
+              [:animations 0 1] {:editor [1 0] :model "animator0" :trace "212" :type :events-view}
+              }}))
+
 (def ui-state
   (atom
-   {:current-page 0
-    :current-view [0 0 0]
-    :views [
-     [
-      [[{:type :editor :formalism :event-b :file "m1"}
-        {:type :editor :formalism :event-b :file "m0"}]]
-      [[{:type :editor :formalism :classical-b :file "s1.mch"}]]
-      ]
-     [[[{:model "animation0" :trace "1" :editor 0 :type :state-view}
-        {:model "animation0" :trace "1" :editor 0 :type :events-view}]
-       [{:model "animation0" :trace "2" :editor 0 :type :state-view}
-        {:model "animation0" :trace "2" :editor 0 :type :history-view}]]
-      [[{:model "animation3" :trace "9" :editor 1 :type :events-view}]]]]
-    }))
+   {:current [:animators 0 1] #_[:editors 0 0]
+    :views {:editors [[:1 :2]
+                      [:3 :4 :5]]
+            :animators [[:6 :7]]}
+
+    :pages {:1 {:type :editor :formalism :event-b :file "m1"}
+            :2 {:type :editor :formalism :event-b :file "m0"}
+            :3 {:type :editor :formalism :event-b :file "m2"}
+            :4 {:type :editor :formalism :event-b :file "m0"}
+            :5 {:type :editor :formalism :event-b :file "ctx0"}
+            :6 {:editor :3 :model "animator0" :trace "212" :type :state-view}
+            :7 {:editor [1 0] :model "animator0" :trace "212" :type :events-view}
+            }}))
+
+
+(defn show [page row column]
+  (let [c (:current @ui-state)]
+    (cond
+      (= 3 (count c)) (when-not (= c [page row column]) {:class "hidden"})
+      :otherwise {:class "thumbnail"})))
 
 (defmulti render-view :type)
-(defmethod render-view :editor [{:keys [formalism file]}]
-  [:div.editor (str "Editor: " file)])
+(defmethod render-view :editor [{:keys [formalism file row column]}]
+  [:div.editor
+   (show :editors row column)
+   (str "Editor: " file "@"row ","column)])
 
-(defmethod render-view :state-view [{:keys [model trace]}]
-  [:div.state-view (str "State: " model "/" trace)])
+(defmethod render-view :state-view [{:keys [model trace row column]}]
+  [:div.state-view
+   (show :animators row column)
+   (str "State: " model "/" trace "@"row ","column)])
 
-(defmethod render-view :events-view [{:keys [model trace]}]
-  [:div.events-view (str "Events: " model "/" trace)])
+(defmethod render-view :events-view [{:keys [model trace row column]}]
+  [:div.events-view
+   (show :animators row column)
+   (str "Events: " model "/" trace "@"row ","column)])
 
-(defmethod render-view :history-view [{:keys [model trace]}]
-  [:div.history-view (str "History: " model "/" trace)])
+(defmethod render-view :history-view [{:keys [model trace row column]}]
+  [:div.history-view
+   (show :animators row column)
+   (str "History: " model "/" trace "@"row ","column)])
 
 
-(defn render-subrow [elements]
-  [:div.subrow (map render-view elements)])
+(defn render-row [y columns]
+  [:div.row (map-indexed (fn [x key] (render-view (assoc (get-in @ui-state [:pages key]) :column x :row y))) columns)])
 
-(defn render-row [subrows]
-  [:div.row (map render-subrow subrows)])
-
-(defn render-page [current index rows]
-  (.log js/console current index (count rows))
+(defn render-page [[section rows]]
   [:div.page
-   (when-not (= current index) {:class "hidden"})
-   (map render-row rows)])
+   (when-not (= section (first (:current @ui-state))) {:class "hidden"})
+   (map-indexed render-row rows)
+   ])
 
-(defn ^:extern animation->editor []
-  (swap! ui-state
-         (fn [{:keys [current-page current-view views] :as s}
-             {:keys [editor]} views]
-           (assoc s :current-view [editor 0 0] :current-page 0))))
-
-(defn ^:extern editor->animation []
-  (swap! ui-state
-         (fn [{:keys [current-page current-view views] :as s}
-             {:keys [editor]} views]
-           (assoc s :current-view [editor 0 0] :current-page 0))))
 
 (defn home-page []
-  (let [{:keys [current-page views current-view]} @ui-state]
+  (let [views (:views @ui-state)]
     [:div.ui
-     (map-indexed (partial render-page current-page current-view) views)]))
+     (map render-page views)]))
 
 
 ;; -------------------------
