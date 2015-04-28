@@ -11,69 +11,65 @@
 ;; Views
 
 
-(def ui-state (atom
-               {:current [:editors 0 0 2]
-                :desktops
-                {:editors
-                 {[0 0] {:formalism :event-b}
-                  [0 0 0] {:file "m2" :type :machine}
-                  [0 0 1] {:file "m1" :type :machine}
-                  [0 0 2] {:file "c1" :type :context}
-                  [0 0 3] {:file "m0" :type :machine}
-                  [1 0] {:formalism :classical-b}
-                  [1 0 0] {:file "Scheduler"}}
-                 :animations
-                 {[0] {:model-id "animator0"}
-                  [0 0] {:trace-id "123"}
-                  [0 0 0] {:type :state-view}
-                  [0 0 1] {:type :events-view}
-                  [0 1] {:trace-id "999"}
-                  [0 1 0] {:type :state-view}
-                  [1 0] {:model-id "animator4" :trace-id "645"}
-                  [1 0 0] {:type :state-view}}}}))
+(def ui-state
+  (atom
+   {:current-page 0
+    :current-view [0 0 0]
+    :views [
+     [
+      [[{:type :editor :formalism :event-b :file "m1"}
+        {:type :editor :formalism :event-b :file "m0"}]]
+      [[{:type :editor :formalism :classical-b :file "s1.mch"}]]
+      ]
+     [[[{:model "animation0" :trace "1" :editor 0 :type :state-view}
+        {:model "animation0" :trace "1" :editor 0 :type :events-view}]
+       [{:model "animation0" :trace "2" :editor 0 :type :state-view}
+        {:model "animation0" :trace "2" :editor 0 :type :history-view}]]
+      [[{:model "animation3" :trace "9" :editor 1 :type :events-view}]]]]
+    }))
 
-(defn merge-elem [state page]
-  (fn [a e]
-    (merge a (get-in state (conj [:desktops page] e) {}))))
+(defmulti render-view :type)
+(defmethod render-view :editor [{:keys [formalism file]}]
+  [:div.editor (str "Editor: " file)])
 
-(defn get-elem [state page row sub-row column]
-  (reduce
-   (merge-elem state page)
-   {}
-   [[row]
-    [row sub-row]
-    [row sub-row column]]))
+(defmethod render-view :state-view [{:keys [model trace]}]
+  [:div.state-view (str "State: " model "/" trace)])
 
-(defn get-row [state page row subrow]
-  )
+(defmethod render-view :events-view [{:keys [model trace]}]
+  [:div.events-view (str "Events: " model "/" trace)])
 
+(defmethod render-view :history-view [{:keys [model trace]}]
+  [:div.history-view (str "History: " model "/" trace)])
+
+
+(defn render-subrow [elements]
+  [:div.subrow (map render-view elements)])
+
+(defn render-row [subrows]
+  [:div.row (map render-subrow subrows)])
+
+(defn render-page [current index rows]
+  (.log js/console current index (count rows))
+  [:div.page
+   (when-not (= current index) {:class "hidden"})
+   (map render-row rows)])
+
+(defn ^:extern animation->editor []
+  (swap! ui-state
+         (fn [{:keys [current-page current-view views] :as s}
+             {:keys [editor]} views]
+           (assoc s :current-view [editor 0 0] :current-page 0))))
+
+(defn ^:extern editor->animation []
+  (swap! ui-state
+         (fn [{:keys [current-page current-view views] :as s}
+             {:keys [editor]} views]
+           (assoc s :current-view [editor 0 0] :current-page 0))))
 
 (defn home-page []
-  [:div
-   [:h1 "Trololo"]
-   [:p "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-
-Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
-
-Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi.
-
-Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer possim assum. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat.
-
-Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis.
-
-At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, At accusam aliquyam diam diam dolore dolores duo eirmod eos erat, et nonumy sed tempor et et invidunt justo labore Stet clita ea et gubergren, kasd magna no rebum. sanctus sea sed takimata ut vero voluptua. est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat.
-
-Consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus.
-
-Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-
-Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
-
-Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi.
-
-Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer possim assum. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat.
-
-Duis"]])
+  (let [{:keys [current-page views current-view]} @ui-state]
+    [:div.ui
+     (map-indexed (partial render-page current-page current-view) views)]))
 
 
 ;; -------------------------
