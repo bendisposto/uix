@@ -67,6 +67,14 @@
     (.log js/console "c " col " nc " n-col " nr " next-row-number " rs " r-size)
     (swap! ui-state assoc :current [page next-row-number n-col])))
 
+(defn ^:extern esc []
+  (swap! ui-state (fn [x] (assoc x :current [(first (:current x))]))))
+
+(defn ^:extern desktop []
+  (swap! ui-state (fn [x] (assoc x :current ({[:editors] [:animators] [:animators] [:editors]} (:current x))))))
+
+(defn ^extern select [row column]
+  (swap! ui-state (fn [x] (assoc x :current (into (:current x) [row column])))))
 
 (defn show [page row column]
   (let [c (:current @ui-state)]
