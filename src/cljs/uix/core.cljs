@@ -65,41 +65,42 @@
 (defn ^extern select [row column]
   (swap! ui-state (fn [x] (assoc x :current (into (:current x) [row column])))))
 
-(defn show [page row column]
+(defn show [shown? page row column]
   (let [c (:current @ui-state)]
-    (when-not (= c [page row column]) {:class "hidden"})))
+    (when-not (and shown? (= c [page row column])) {:class "hidden"})))
 
-(defmulti render-thumbnail :type)
-(defmethod render-thumbnail :editor [{:keys [formalism file column]}]
-  [:div.editor-thumbnail {:class (str formalism (if (= 0 column) "main-component" ""))} file])
-(defmethod render-thumbnail :default [{:keys [model type]}]
-  [:div {:class (str (name type))} model])
+(defmulti render-thumbnail (fn [e _] (:type e)))
+(defmethod render-thumbnail :editor [{:keys [formalism file column]} shown?]
+  [:div.editor-thumbnail {:class (str (if shown? "" " hidden ")
+                                      (if (= 0 column) "main-component" ""))} file])
+(defmethod render-thumbnail :default [{:keys [model type]} shown?]
+  [:div {:class (str (name type) (if shown? "" " hidden "))} model])
 
-(defmulti render-view :type)
-(defmethod render-view :editor [{:keys [formalism file row column]}]
+(defmulti render-view (fn [e _] (:type e)))
+(defmethod render-view :editor [{:keys [formalism file row column]} shown?]
   [:div.editor (merge  {:key (str "ed" row column)}
-                       (show :editors row column))
+                       (show shown? :editors row column))
    [:h1 (str "Editor: " file "@"row ","column)]
    [:b (l/gen-lorem)]
    [:div (l/gen-lorem)]])
 
-(defmethod render-view :state-view [{:keys [model trace row column]}]
+(defmethod render-view :state-view [{:keys [model trace row column]} shown?]
   [:div.state-view (merge {:key (str "ani" row column)}
-                          (show :animators row column))
+                          (show shown? :animators row column))
    [:h1 (str "State: " model "/" trace "@"row ","column)]
    [:p (l/gen-lorem)]
    [:div (l/gen-lorem)]])
 
-(defmethod render-view :events-view [{:keys [model trace row column]}]
+(defmethod render-view :events-view [{:keys [model trace row column]} shown?]
   [:div.events-view (merge {:key (str "ani" row column)}
-                           (show :animators row column))
+                           (show shown? :animators row column))
    [:h1 (str "Events: " model "/" trace "@"row ","column)]
    [:i (l/gen-lorem)]
    [:div (l/gen-lorem)]])
 
-(defmethod render-view :history-view [{:keys [model trace row column]}]
+(defmethod render-view :history-view [{:keys [model trace row column]} shown?]
   [:div.history-view (merge {:key (str "ani" row column)}
-                            (show :animators row column))
+                            (show shown? :animators row column))
    [:h1 (str "History: " model "/" trace "@"row ","column)]
    [:b (l/gen-lorem)]
    [:p (l/gen-lorem)]])
@@ -110,9 +111,8 @@
      (doall (map-indexed
              (fn [x key]
                (let [e (get-in @ui-state [:pages key])]
-                 (if overview?
-                   (render-thumbnail e)
-                   (render-view (assoc e :column x :row y)))))
+                 [:div (render-thumbnail e overview?)
+                  (render-view (assoc e :column x :row y) (not overview?))]))
              columns))]))
 
 (defn render-page [[section rows]]
