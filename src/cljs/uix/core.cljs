@@ -63,34 +63,39 @@
 (defn ^:extern desktop []
   (swap! ui-state
          (fn [{[page row column] :current :as x}]
-           (assoc x :current [({:editors :animators, :animators :editors} page) row column]))))
+           (assoc x :current [({:editors :animators, :animators :editors} page) 0 0]))))
 
-(defn ^extern select [row column]
-  (swap! ui-state
-         (fn [x]
-           (assoc x
-                  :overview? false
-                  :current (into [(first (:current x))] [row column])))))
+(defn ^extern select
+  ([] (let [[_ r c] (:current @ui-state)]
+        (select r c)))
+  ([row column]
+   (swap! ui-state
+          (fn [x]
+            (assoc x
+                   :overview? false
+                   :current (into [(first (:current x))] [row column]))))))
 
 (defn show [shown? page row column]
   (let [c (:current @ui-state)]
-    (when-not (and shown? (= c [page row column])) {:class "hidden"})))
+    (when-not (and shown? (= c [page row column])) {:class " hidden "})))
 
 (defmulti render-thumbnail (fn [e _] (:type e)))
 (defmethod render-thumbnail :editor [{:keys [formalism file kind row column]} shown?]
-  [:div.thumbnail.editor-thumbnail
+  [:div.thumb.editor-thumbnail
    {:key (str "tned-" row "-" column)
     :class (str (if shown? "" " hidden ")
                 (if (= 0 column) " main-component " "")
-                "tn-" (name formalism) "-" (name kind))
+                "tn-" (name formalism) "-" (name kind)
+                (if (= [row column] (rest (:current @ui-state))) " selected " ""))
     :on-click #(select row column)}
    [:div.editor-thumbnail-text file]]
   )
 (defmethod render-thumbnail :default [{:keys [model type row column]} shown?]
-  [:div.thumbnail.view-thumbnail
+  [:div.thumb.view-thumbnail
    {:key (str "tnv-" row "-" column)
     :class (str (if shown? "" " hidden ")
-                "tn-" (name type))
+                "tn-" (name type)
+                (if (= [row column] (rest (:current @ui-state))) " selected " ""))
     :on-click #(select row column)}])
 
 (defmulti render-view (fn [e _] (:type e)))
@@ -157,4 +162,5 @@
   (.add js/shortcut "Escape" #(esc))
   (.add js/shortcut "Meta+Left" #(desktop))
   (.add js/shortcut "Meta+Right" #(desktop))
+  (.add js/shortcut "Enter" #(select))
   (mount-root))

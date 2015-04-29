@@ -1,9 +1,10 @@
-.thumbnail {
+.thumb {
   height: 113px;
   width:150px;
   float:left;
   margin-left:2px;
   margin-right:2px;
+  border: 1px solid #ccc;
 }
 
 .tn-event-b-machine {
@@ -35,6 +36,6 @@
   top:65px;
 }
 
-.active {
-  border: 1px solid black;
+.selected {
+  border: 2px solid red;
 }
