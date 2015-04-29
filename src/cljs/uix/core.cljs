@@ -80,6 +80,7 @@
     (when-not (and shown? (= c [page row column])) {:class " hidden "})))
 
 (defmulti render-thumbnail (fn [e _] (:type e)))
+
 (defmethod render-thumbnail :editor [{:keys [formalism file kind row column]} shown?]
   [:div.thumb.editor-thumbnail
    {:key (str "tned-" row "-" column)
@@ -88,8 +89,9 @@
                 "tn-" (name formalism) "-" (name kind)
                 (if (= [row column] (rest (:current @ui-state))) " selected " ""))
     :on-click #(select row column)}
-   [:div.editor-thumbnail-text file]]
+   [:div.editor-thumbnail-text {:key (str "tnedtext-" row "-" column) } file]]
   )
+
 (defmethod render-thumbnail :default [{:keys [model type row column]} shown?]
   [:div.thumb.view-thumbnail
    {:key (str "tnv-" row "-" column)
@@ -99,11 +101,30 @@
     :on-click #(select row column)}])
 
 (defmulti render-view (fn [e _] (:type e)))
-(defmethod render-view :editor [{:keys [formalism file row column]} shown?]
-  [:div.editor (merge  {:key (str "ed" row column)}
-                       (show shown? :editors row column))
-   [:h1 (str "Editor: " file "@"row ","column)]
-   [:div (l/gen-lorem 1)]])
+
+(defmethod render-view :editor [{:keys [formalism file row column]} _]
+  (let [cm (atom nil)
+        content (atom (l/gen-lorem))
+        editor-id (str "editor-" row "-" column)]
+    (reagent/create-class
+     {
+      :component-did-mount (fn [c]
+                             (let [dom-element (.getElementById js/document editor-id)
+                                   mirr (.fromTextArea
+                                         js/CodeMirror
+                                         dom-element #js {:lineWrapping true
+                                                          :lineNumbers true})]
+                               (reset! cm mirr)))
+      :component-did-update (fn [e]
+                              (let [doc (.-doc @cm)]
+                                (.setValue doc @content)))
+      :reagent-render
+      (fn [editor shown?]
+        (let []
+          [:div.editor (merge  {:key (str "ed" row column)}
+                               (show shown? :editors row column))
+           [:h1 (str "Editor: " file "@"row ","column)]
+           [:textarea {:id editor-id :defaultValue @content}]]))})))
 
 (defmethod render-view :state-view [{:keys [model trace row column]} shown?]
   [:div.state-view (merge {:key (str "ani" row column)}
@@ -131,9 +152,10 @@
    (doall (map-indexed
            (fn [x key]
              (let [e (assoc (get-in @ui-state [:pages key]) :column x :row y)
-                   overview? (:overview? @ui-state)]
-               [:div (render-thumbnail e overview?)
-                (render-view e (not overview?))]))
+                   overview? (:overview? @ui-state)
+                   page (:cpage @ui-state)]
+               [:div {:key (str  "view-elem-" x y)} (render-thumbnail e overview?)
+                [render-view e (not overview?)]]))
            columns))])
 
 (defn render-page [[section rows]]
@@ -141,7 +163,6 @@
                     (when-not (= section (first (:current @ui-state))) {:class "hidden"}))
    (doall (map-indexed render-row rows))
    ])
-
 
 (defn home-page []
   (let [views (:views @ui-state)]

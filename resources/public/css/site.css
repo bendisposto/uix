@@ -5,6 +5,8 @@
   margin-left:2px;
   margin-right:2px;
   border: 1px solid #ccc;
+  margin-top: 6px;
+  margin-bottom: 6px;
 }
 
 .tn-event-b-machine {
@@ -34,6 +36,11 @@
 .editor-thumbnail-text {
   position:relative;
   top:65px;
+}
+
+.row{
+  margin-left: 25px;
+  margin-right: 25px;
 }
 
 .selected {
