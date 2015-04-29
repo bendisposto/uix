@@ -58,13 +58,19 @@
     (swap! ui-state assoc :current [page next-row-number n-col])))
 
 (defn ^:extern esc []
-  (swap! ui-state (fn [x] (assoc x :current [(first (:current x))]))))
+  (swap! ui-state (fn [x] (assoc x :overview? true))))
 
 (defn ^:extern desktop []
-  (swap! ui-state (fn [x] (assoc x :current ({[:editors] [:animators] [:animators] [:editors]} (:current x))))))
+  (swap! ui-state
+         (fn [{[page row column] :current :as x}]
+           (assoc x :current [({:editors :animators, :animators :editors} page) row column]))))
 
 (defn ^extern select [row column]
-  (swap! ui-state (fn [x] (assoc x :current (into (:current x) [row column])))))
+  (swap! ui-state
+         (fn [x]
+           (assoc x
+                  :overview? false
+                  :current (into [(first (:current x))] [row column])))))
 
 (defn show [shown? page row column]
   (let [c (:current @ui-state)]
@@ -116,14 +122,14 @@
    [:p (l/gen-lorem 7)]])
 
 (defn render-row [y columns]
-  (let [overview? (= 1 (count (:current @ui-state)))]
-    [:div.row {:key (str "row" y)}
-     (doall (map-indexed
-             (fn [x key]
-               (let [e (assoc (get-in @ui-state [:pages key]) :column x :row y)]
-                 [:div (render-thumbnail e overview?)
-                  (render-view e (not overview?))]))
-             columns))]))
+  [:div.row {:key (str "row" y)}
+   (doall (map-indexed
+           (fn [x key]
+             (let [e (assoc (get-in @ui-state [:pages key]) :column x :row y)
+                   overview? (:overview? @ui-state)]
+               [:div (render-thumbnail e overview?)
+                (render-view e (not overview?))]))
+           columns))])
 
 (defn render-page [[section rows]]
   [:div.page (merge {:key section}
