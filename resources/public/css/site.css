@@ -6,8 +6,28 @@
   margin-right:2px;
 }
 
-.event-b-thumbnail {
-  background-image: url(../img/event-b-machine.png);
+.tn-event-b-machine {
+  background-image: url(../img/tn-event-b-machine.png);
+}
+
+.tn-event-b-context {
+  background-image: url(../img/tn-event-b-context.png);
+}
+
+.tn-classical-b-machine {
+  background-image: url(../img/tn-classical-b-machine.png);
+}
+
+.tn-history-view {
+   background-image: url(../img/tn-history-view.png);
+}
+
+.tn-state-view {
+   background-image: url(../img/tn-state-view.png);
+}
+
+.tn-events-view {
+   background-image: url(../img/tn-events-view.png);
 }
 
 .editor-thumbnail-text {

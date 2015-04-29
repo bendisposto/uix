@@ -17,15 +17,16 @@
    {:current [:editors 0 0]
     :views {:editors [[:1 :2]
                       [:3 :4 :5]]
-            :animators [[:6 :7]]}
+            :animators [[:8 :6 :7]]}
 
-    :pages {:1 {:type :editor :formalism :event-b :file "m1"}
-            :2 {:type :editor :formalism :event-b :file "m0"}
-            :3 {:type :editor :formalism :event-b :file "m2"}
-            :4 {:type :editor :formalism :event-b :file "m0"}
-            :5 {:type :editor :formalism :event-b :file "ctx0"}
+    :pages {:1 {:type :editor :formalism :classical-b :kind :machine :file "m1"}
+            :2 {:type :editor :formalism :classical-b :kind :machine :file "m0"}
+            :3 {:type :editor :formalism :event-b :kind :machine :file "m2"}
+            :4 {:type :editor :formalism :event-b :kind :machine :file "m0"}
+            :5 {:type :editor :formalism :event-b :kind :context :file "ctx0"}
             :6 {:editor :3 :model "animator0" :trace "212" :type :state-view}
-            :7 {:editor [1 0] :model "animator0" :trace "212" :type :events-view}
+            :7 {:editor :3 :model "animator0" :trace "212" :type :events-view}
+            :8 {:editor :3 :model "animator0" :trace "212" :type :history-view}
             }}))
 
 (defn ^:extern right []
@@ -70,19 +71,21 @@
     (when-not (and shown? (= c [page row column])) {:class "hidden"})))
 
 (defmulti render-thumbnail (fn [e _] (:type e)))
-(defmethod render-thumbnail :editor [{:keys [formalism file row column]} shown?]
+(defmethod render-thumbnail :editor [{:keys [formalism file kind row column]} shown?]
   [:div.thumbnail.editor-thumbnail
    {:key (str "tned-" row "-" column)
     :class (str (if shown? "" " hidden ")
                 (if (= 0 column) " main-component " "")
-                (name formalism) "-thumbnail")
+                "tn-" (name formalism) "-" (name kind))
     :on-click #(select row column)}
    [:div.editor-thumbnail-text file]]
   )
 (defmethod render-thumbnail :default [{:keys [model type row column]} shown?]
   [:div.thumbnail.view-thumbnail
    {:key (str "tnv-" row "-" column)
-    :class (str (name type) (if shown? "" " hidden "))} model])
+    :class (str (if shown? "" " hidden ")
+                "tn-" (name type))
+    :on-click #(select row column)}])
 
 (defmulti render-view (fn [e _] (:type e)))
 (defmethod render-view :editor [{:keys [formalism file row column]} shown?]
