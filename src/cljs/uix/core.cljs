@@ -67,9 +67,13 @@
 
 (defn show [page row column]
   (let [c (:current @ui-state)]
-    (cond
-      (= 3 (count c)) (when-not (= c [page row column]) {:class "hidden"})
-      :otherwise {:class "col-lg-1"})))
+    (when-not (= c [page row column]) {:class "hidden"})))
+
+(defmulti render-thumbnail :type)
+(defmethod render-thumbnail :editor [{:keys [formalism file column]}]
+  [:div.editor-thumbnail {:class (str formalism (if (= 0 column) "main-component" ""))} file])
+(defmethod render-thumbnail :default [{:keys [model type]}]
+  [:div {:class (str (name type))} model])
 
 (defmulti render-view :type)
 (defmethod render-view :editor [{:keys [formalism file row column]}]
@@ -100,10 +104,16 @@
    [:b (l/gen-lorem)]
    [:p (l/gen-lorem)]])
 
-
 (defn render-row [y columns]
-  [:div.row {:key (str "row" y)}
-   (doall (map-indexed (fn [x key] (render-view (assoc (get-in @ui-state [:pages key]) :column x :row y))) columns))])
+  (let [overview? (= 1 (count (:current @ui-state)))]
+    [:div.row {:key (str "row" y)}
+     (doall (map-indexed
+             (fn [x key]
+               (let [e (get-in @ui-state [:pages key])]
+                 (if overview?
+                   (render-thumbnail e)
+                   (render-view (assoc e :column x :row y)))))
+             columns))]))
 
 (defn render-page [[section rows]]
   [:div.page (merge {:key section}
@@ -132,5 +142,3 @@
   (.add js/shortcut "Meta+Left" #(desktop))
   (.add js/shortcut "Meta+Right" #(desktop))
   (mount-root))
-
-
