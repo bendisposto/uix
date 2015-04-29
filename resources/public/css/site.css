@@ -1,0 +1,16 @@
+.thumbnail {
+  height: 113px;
+  width:150px;
+  float:left;
+  margin-left:2px;
+  margin-right:2px;
+}
+
+.event-b-thumbnail {
+  background-image: url(../img/event-b-machine.png);
+}
+
+.editor-thumbnail-text {
+  position:relative;
+  top:65px;
+}
