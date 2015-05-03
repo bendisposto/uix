@@ -1,8 +1,10 @@
 (ns uix.core
+  (:require-macros [reagent.ratom :refer [reaction]])
   (:require [reagent.core :as reagent :refer [atom]]
             [reagent.session :as session]
             [secretary.core :as secretary :include-macros true]
             [goog.events :as events]
+            [re-frame.core :as rf]
             [goog.history.EventType :as EventType]
             [cljsjs.react :as react]
             [uix.lorem :as l])
@@ -28,6 +30,7 @@
             :7 {:editor :3 :model "animator0" :trace "212" :type :events-view}
             :8 {:editor :3 :model "animator0" :trace "212" :type :history-view}
             }}))
+
 
 (defn ^:extern right []
   (let [[page row col] (:current @ui-state)
@@ -74,6 +77,37 @@
             (assoc x
                    :overview? false
                    :current (into [(first (:current x))] [row column]))))))
+
+(rf/register-handler
+ :navigate
+ (fn [db [_ direction]]
+   (if (:overview? @ui-state)
+     (desktop)
+     (case direction
+       :up (up)
+       :down (down)
+       :left (left)
+       :right (right)))
+   db))
+
+(rf/register-handler
+ :navigate-ov
+ (fn [db [_ direction]]
+   (when (:overview? @ui-state)
+     (case direction
+       :up (up)
+       :down (down)
+       :left (left)
+       :right (right)))
+   db))
+
+(rf/register-handler
+ :esc
+ (fn [db _] (if (:overview? @ui-state) (select) (esc)) db))
+
+(rf/register-handler
+ :enter
+ (fn [db _] (when (:overview? @ui-state) (select)) db))
 
 (defn show [shown? page row column]
   (let [c (:current @ui-state)]
@@ -176,12 +210,14 @@
   (reagent/render [home-page] (.getElementById js/document "app")))
 
 (defn init! []
-  (.add js/shortcut "Alt+Left" #(left))
-  (.add js/shortcut "Alt+Right" #(right))
-  (.add js/shortcut "Alt+Up" #(up))
-  (.add js/shortcut "Alt+Down" #(down))
-  (.add js/shortcut "Escape" #(esc))
-  (.add js/shortcut "Meta+Left" #(desktop))
-  (.add js/shortcut "Meta+Right" #(desktop))
-  (.add js/shortcut "Enter" #(select))
+  (.add js/shortcut "Shift+Left" #(rf/dispatch [:navigate :left]))
+  (.add js/shortcut "Shift+Right" #(rf/dispatch [:navigate :right]))
+  (.add js/shortcut "Shift+Up" #(rf/dispatch [:navigate :up]))
+  (.add js/shortcut "Shift+Down" #(rf/dispatch [:navigate :down]))
+  (.add js/shortcut "Left" #(rf/dispatch [:navigate-ov :left]))
+  (.add js/shortcut "Right" #(rf/dispatch [:navigate-ov :right]))
+  (.add js/shortcut "Up" #(rf/dispatch [:navigate-ov :up]))
+  (.add js/shortcut "Down" #(rf/dispatch [:navigate-ov :down]))
+  (.add js/shortcut "Escape" #(rf/dispatch [:esc]))
+  (.add js/shortcut "Enter" #(rf/dispatch [:enter]))
   (mount-root))
